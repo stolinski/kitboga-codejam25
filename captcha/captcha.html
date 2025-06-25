@@ -122,7 +122,7 @@
     <script type="text/javascript">
       (function (window, document) {
         const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-        const noteFrequencies = {
+        const note_frequencies = {
           C: 261.63,
           "C#": 277.18,
           D: 293.66,
@@ -136,7 +136,7 @@
           "A#": 466.16,
           B: 493.88,
         };
-        const majorChords = {
+        const major_chords = {
           C: ["C", "E", "G"],
           D: ["D", "F#", "A"],
           E: ["E", "G#", "B"],
@@ -146,7 +146,7 @@
           B: ["B", "D#", "F#"],
         };
         // Harder chords for hard mode
-        const complexChords = {
+        const complex_chords = {
           Cmaj7: ["C", "E", "G", "B"],
           D7: ["D", "F#", "A", "C"],
           Emin7: ["E", "G", "B", "D"],
@@ -158,40 +158,40 @@
           "F#7b9": ["F#", "A#", "C#", "E", "G"],
         };
 
-        let audioContext;
+        let audio_context;
         let mode = "hard";
         let sequence = [];
-        let currentStep = 0;
-        let pressedNotes = new Set();
-        let progressTimeout;
-        let inputEnabled = true;
+        let current_step = 0;
+        let pressed_notes = new Set();
+        let progress_timeout;
+        let input_enabled = true;
 
         function createOscillator(frequency) {
-          const oscillator = audioContext.createOscillator();
-          const gainNode = audioContext.createGain();
+          const oscillator = audio_context.createOscillator();
+          const gain_node = audio_context.createGain();
           oscillator.type = "sine";
           oscillator.frequency.value = frequency;
-          oscillator.connect(gainNode);
-          gainNode.connect(audioContext.destination);
-          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+          oscillator.connect(gain_node);
+          gain_node.connect(audio_context.destination);
+          gain_node.gain.setValueAtTime(0.3, audio_context.currentTime);
+          gain_node.gain.exponentialRampToValueAtTime(0.01, audio_context.currentTime + 0.5);
           oscillator.start();
-          oscillator.stop(audioContext.currentTime + 0.5);
+          oscillator.stop(audio_context.currentTime + 0.5);
           return oscillator;
         }
 
         function createKeyboard() {
           const keyboard = document.getElementById("keyboard");
           keyboard.innerHTML = "";
-          const whiteKeys = ["C", "D", "E", "F", "G", "A", "B"];
-          const blackKeys = ["C#", "D#", "F#", "G#", "A#"];
-          whiteKeys.forEach((note, index) => {
+          const white_keys = ["C", "D", "E", "F", "G", "A", "B"];
+          const black_keys = ["C#", "D#", "F#", "G#", "A#"];
+          white_keys.forEach((note, index) => {
             const key = document.createElement("div");
             key.className = "white-key";
             key.dataset.note = note;
             keyboard.appendChild(key);
           });
-          blackKeys.forEach((note, index) => {
+          black_keys.forEach((note, index) => {
             const key = document.createElement("div");
             key.className = "black-key";
             key.dataset.note = note;
@@ -205,10 +205,10 @@
         }
 
         function playNote(note) {
-          if (!audioContext) {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          if (!audio_context) {
+            audio_context = new (window.AudioContext || window.webkitAudioContext)();
           }
-          createOscillator(noteFrequencies[note]);
+          createOscillator(note_frequencies[note]);
         }
 
         function setStatus(msg, color = "#666") {
@@ -218,22 +218,22 @@
 
         function captchaSuccess() {
           setStatus("Success!", "#4caf50");
-          inputEnabled = false;
+          input_enabled = false;
           window.top.postMessage("success", "*");
           window.close();
         }
 
         function handleKeyPress(note) {
-          if (!inputEnabled) return;
-          if (pressedNotes.has(note)) return;
-          pressedNotes.add(note);
+          if (!input_enabled) return;
+          if (pressed_notes.has(note)) return;
+          pressed_notes.add(note);
           playNote(note);
           const key = document.querySelector(`[data-note="${note}"]`);
           key.classList.add("active");
-          if (note === sequence[currentStep]) {
+          if (note === sequence[current_step]) {
             key.classList.add("correct");
-            currentStep++;
-            if (currentStep < sequence.length) {
+            current_step++;
+            if (current_step < sequence.length) {
               setStatus(`Correct! ${mode === "easy" ? "" : "Next note..."}`);
               updateDisplay();
             } else {
@@ -258,7 +258,7 @@
         }
 
         function handleKeyRelease(note) {
-          pressedNotes.delete(note);
+          pressed_notes.delete(note);
           const key = document.querySelector(`[data-note="${note}"]`);
           key.classList.remove("active");
           key.classList.remove("incorrect");
@@ -269,36 +269,36 @@
             document.getElementById("chord-display").textContent = `Play a: ${sequence[0]}`;
           } else if (mode === "medium") {
             document.getElementById("chord-display").textContent = `Play a ${
-              currentStep + 1
-            } of 3: ${sequence[currentStep]}`;
+              current_step + 1
+            } of 3: ${sequence[current_step]}`;
           } else if (mode === "hard") {
             document.getElementById(
               "chord-display"
-            ).textContent = `Play an ${currentChordName} chord`;
+            ).textContent = `Play an ${current_chord_name} chord`;
           }
         }
 
         function resetCaptcha(selectedMode) {
           mode = selectedMode;
-          inputEnabled = true;
-          currentStep = 0;
-          pressedNotes = new Set();
+          input_enabled = true;
+          current_step = 0;
+          pressed_notes = new Set();
           setStatus("Press the keys to find the correct note");
           // Generate sequence
           if (mode === "easy") {
             sequence = [notes[Math.floor(Math.random() * notes.length)]];
           } else if (mode === "medium") {
             // Pick a random major chord and require the user to play all notes in sequence
-            const chordRoots = Object.keys(majorChords);
-            const root = chordRoots[Math.floor(Math.random() * chordRoots.length)];
-            sequence = majorChords[root];
-            window.currentChordName = root + " major";
+            const chord_roots = Object.keys(major_chords);
+            const root = chord_roots[Math.floor(Math.random() * chord_roots.length)];
+            sequence = major_chords[root];
+            window.current_chord_name = root + " major";
           } else if (mode === "hard") {
             // Pick a random complex chord
-            const chordNames = Object.keys(complexChords);
-            const chord = chordNames[Math.floor(Math.random() * chordNames.length)];
-            sequence = complexChords[chord];
-            window.currentChordName = chord;
+            const chord_names = Object.keys(complex_chords);
+            const chord = chord_names[Math.floor(Math.random() * chord_names.length)];
+            sequence = complex_chords[chord];
+            window.current_chord_name = chord;
           }
           updateDisplay();
         }
@@ -307,8 +307,8 @@
           document.addEventListener(
             "click",
             () => {
-              if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+              if (!audio_context) {
+                audio_context = new (window.AudioContext || window.webkitAudioContext)();
               }
             },
             { once: true }
