@@ -283,6 +283,12 @@
           input_enabled = true;
           current_step = 0;
           pressed_notes = new Set();
+
+          // Clear all visual states from keys
+          document.querySelectorAll(".white-key, .black-key").forEach((key) => {
+            key.classList.remove("active", "correct", "incorrect");
+          });
+
           setStatus("Press the keys to find the correct note");
           // Generate sequence
           if (mode === "easy") {
